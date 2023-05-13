@@ -1,147 +1,150 @@
-<?php
-error_reporting(E_ERROR | E_PARSE);
-ini_set('display_errors', '1');
-
-$DB_host = 'mysql1.blazingfast.io';
-$DB_user = 'vpnngpin_dave01';
-$DB_pass = 'pinoytayo2021';
-$DB_name = 'vpnngpin_dave01';
-
-$mysqli = new MySQLi($DB_host,$DB_user,$DB_pass,$DB_name);
-if ($mysqli->connect_error) {
-    die('Error : ('. $mysqli->connect_errno .') '. $mysqli->connect_error);
-}
-
-function encrypt_key($paswd)
-	{
-	  $mykey=getEncryptKey();
-	  $encryptedPassword=encryptPaswd($paswd,$mykey);
-	  return $encryptedPassword;
-	}
-	 
-	// function to get the decrypted user password
-	function decrypt_key($paswd)
-	{
-	  $mykey=getEncryptKey();
-	  $decryptedPassword=decryptPaswd($paswd,$mykey);
-	  return $decryptedPassword;
-	}
-	 
-	function getEncryptKey()
-	{
-		$secret_key = md5('eugcar');
-		$secret_iv = md5('sanchez');
-		$keys = $secret_key . $secret_iv;
-		return encryptor('encrypt', $keys);
-	}
-	function encryptPaswd($string, $key)
-	{
-	  $result = '';
-	  for($i=0; $i<strlen ($string); $i++)
-	  {
-		$char = substr($string, $i, 1);
-		$keychar = substr($key, ($i % strlen($key))-1, 1);
-		$char = chr(ord($char)+ord($keychar));
-		$result.=$char;
-	  }
-		return base64_encode($result);
-	}
-	 
-	function decryptPaswd($string, $key)
-	{
-	  $result = '';
-	  $string = base64_decode($string);
-	  for($i=0; $i<strlen($string); $i++)
-	  {
-		$char = substr($string, $i, 1);
-		$keychar = substr($key, ($i % strlen($key))-1, 1);
-		$char = chr(ord($char)-ord($keychar));
-		$result.=$char;
-	  }
-	 
-		return $result;
-	}
-	
-	function encryptor($action, $string) {
-		$output = false;
-
-		$encrypt_method = "AES-256-CBC";
-		//pls set your unique hashing key
-		$secret_key = md5('eugcar sanchez');
-		$secret_iv = md5('sanchez eugcar');
-
-		// hash
-		$key = hash('sha256', $secret_key);
-		
-		// iv - encrypt method AES-256-CBC expects 16 bytes - else you will get a warning
-		$iv = substr(hash('sha256', $secret_iv), 0, 16);
-
-		//do the encyption given text/string/number
-		if( $action == 'encrypt' ) {
-			$output = openssl_encrypt($string, $encrypt_method, $key, 0, $iv);
-			$output = base64_encode($output);
-		}
-		else if( $action == 'decrypt' ){
-			//decrypt the given text/string/number
-			$output = openssl_decrypt(base64_decode($string), $encrypt_method, $key, 0, $iv);
-		}
-
-		return $output;
-	}
+#!/bin/bash
+cp /usr/share/zoneinfo/Asia/Manila /etc/localtime
 
 
-
-$data = '';
-$premium = "duration > 0 AND is_freeze = 0 AND status = 'live'";
-$vip = "is_freeze = 0 AND vip_duration > 0 AND status = 'live'";
-$private = "is_freeze = 0 AND private_duration > 0 AND status = 'live'";
-
-$query = $mysqli->query("SELECT * FROM users
-WHERE ".$vip." OR ".$private." ORDER by user_id DESC");
-if($query->num_rows > 0)
+install_require()
 {
-	while($row = $query->fetch_assoc())
-	{
-		$data .= '';
-		$username = $row['user_name'];
-		$password = decrypt_key($row['user_pass']);
-		$password = encryptor('decrypt',$password);	
-		$userid	= $row['user_id'];
-		$data .= '/usr/sbin/useradd -p $(openssl passwd -1 '.$password.') -M '.$username.' -u '.$userid.' -o --shell=/bin/false --no-create-home;'.PHP_EOL;
-	}
+  clear
+  echo "Updating your system."
+  {
+    apt-get -o Acquire::ForceIPv4=true update
+  } &>/dev/null
+  clear
+  echo "Installing dependencies."
+  {
+    apt-get -o Acquire::ForceIPv4=true install python dos2unix stunnel4 dropbear screen curl -y
+  } &>/dev/null
 }
-$location = '/root/active.sh';
-$fp = fopen($location, 'w');
-fwrite($fp, $data) or die("Unable to open file!");
-fclose($fp);
 
-
-#In-Active and Invalid Accounts
-$data2 = '';
-$premium_deactived = "duration <= 0";
-$vip_deactived = "vip_duration <= 0";
-$private_deactived = "private_duration <= 0";
-$is_validated = "is_validated=0";
-$is_activate = "is_active=0";
-$freeze = "is_freeze=1";
-
-
-$query2 = $mysqli->query("SELECT * FROM users 
-WHERE ".$freeze." OR ".$vip_deactived ." AND ".$private_deactived." OR ".$is_activate."
-");
-if($query2->num_rows > 0)
+install_banner()
 {
-	while($row2 = $query2->fetch_assoc())
-	{
-		$data2 .= '';
-		$toadd = $row2['user_name'];	
-		$data2 .= '/usr/sbin/userdel '.$toadd.''.PHP_EOL;
-	}
+clear
+echo "Adding banner."
+{
+cat > /etc/banner << MyBanner
+<br>
+==========================
+<br><font color=red size=7><b>WARNING</b></font>
+<br>
+==========================
+<br>
+<i><font color='green'>- NO SPAMMING !!!</br></font></i>
+<br><i><font color='green'>- NO DDOS !!!</br></font></i>
+<br><i><font color='green'>- NO HACKING !!!</br></font></i>
+<br><i><font color='green'>- NO CARDING !!!</br></font></i>
+<br><i><font color='green'>- NO TORRENT !!!</i></br></font></i>
+<br>
+==========================
+<br>
+MyBanner
+    
+} &>/dev/null
 }
-$location2 = '/root/inactive.sh';
-$fp = fopen($location2, 'w');
-fwrite($fp, $data2) or die("Unable to open file!");
-fclose($fp);
 
-$mysqli->close();
-?>
+install_socks()
+{
+clear
+echo "Installing socks."
+{
+wget --no-check-certificate http://firenetvpn.net/files/websocket/proxy.py -O ~/.ubuntu.py
+dos2unix ~/.ubuntu.py
+chmod +x ~/.ubuntu.py
+
+cat > /etc/condom.sh << MyCondom
+#!/bin/sh -e
+service dropbear restart
+service stunnel4 restart
+screen -dmS socks python ~/.ubuntu.py
+exit 0
+MyCondom
+
+chmod +x /etc/condom.sh
+sudo crontab -l | { echo '@reboot bash /etc/condom.sh'; } | crontab -
+} &>/dev/null
+}
+
+install_dropbear()
+{
+clear
+echo "Installing dropbear."
+{
+rm -rf /etc/default/dropbear
+
+cat > /etc/default/dropbear << MyDropbear
+#FirenetDev
+NO_START=0
+DROPBEAR_PORT=550
+DROPBEAR_EXTRA_ARGS="-p 551"
+DROPBEAR_BANNER="/etc/banner"
+DROPBEAR_RSAKEY="/etc/dropbear/dropbear_rsa_host_key"
+DROPBEAR_DSSKEY="/etc/dropbear/dropbear_dss_host_key"
+DROPBEAR_ECDSAKEY="/etc/dropbear/dropbear_ecdsa_host_key"
+DROPBEAR_RECEIVE_WINDOW=65536
+MyDropbear
+
+sed -i '/\/bin\/false/d' /etc/shells
+sed -i '/\/usr\/sbin\/nologin/d' /etc/shells
+echo '/bin/false' >> /etc/shells
+echo '/usr/sbin/nologin' >> /etc/shells
+
+service dropbear restart
+service ssh restart
+} &>/dev/null
+}
+
+install_stunnel()
+{
+clear
+echo "Installing stunnel."
+{
+cd /etc/stunnel/ || exit
+openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -sha256 -subj '/CN=KobzVPN/O=KobeKobz/C=PH' -keyout /etc/stunnel/stunnel.pem -out /etc/stunnel/stunnel.pem
+
+rm -rf /etc/stunnel/stunnel.conf
+echo "cert = /etc/stunnel/stunnel.pem
+client = no
+socket = a:SO_REUSEADDR=1
+socket = l:TCP_NODELAY=1
+socket = r:TCP_NODELAY=1
+
+[stunnel]
+connect = 127.0.0.1:80
+accept = 443" >> stunnel.conf
+
+cd /etc/default && rm stunnel4
+
+echo 'ENABLED=1
+FILES="/etc/stunnel/*.conf"
+OPTIONS=""
+PPP_RESTART=0
+RLIMITS=""' >> stunnel4
+
+chmod 755 stunnel4
+sudo service stunnel4 restart
+} &>/dev/null
+}
+
+install_done()
+{
+  clear
+  echo "WEBSOCKET SSH SERVER"
+  echo "IP : $(curl -s https://api.ipify.org)"
+  echo "SSL port : 443"
+  echo "SSH SSL port : 80"
+  echo "SOCKS port : 80"
+  echo
+  echo
+  history -c;
+  rm ~/.installer
+  echo "Server will reboot after 10 seconds"
+  sleep 10
+  reboot
+  
+}
+
+install_require
+install_banner
+install_dropbear
+install_socks
+install_stunnel
+install_done
